@@ -11,7 +11,11 @@ const gardenSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  sunHours: Number
+  sunHours: Number,
+  user:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }
 });
 
 

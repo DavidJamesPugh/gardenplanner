@@ -33,33 +33,45 @@ const GardenCanvas = () => {
 
     ctx.strokeStyle = 'green';
     ctx.lineWidth = 2;
+    const drawLineWithLength = (start, end) => {
+      // Draw the line
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
 
+      // Calculate the line length
+      const length = Math.sqrt(
+        Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
+      ) / 10;
+
+      // Calculate the midpoint
+      const midX = (start.x + end.x) / 2;
+      const midY = (start.y + end.y) / 2;
+
+      // Display the length at the midpoint
+      ctx.fillText(length.toFixed(0), midX + 5, midY - 5);
+    };
     // Draw all garden lines except for the last one (from last to mouse)
     for (let i = 1; i < points.length; i++) {
-      ctx.beginPath();
-      ctx.moveTo(points[i - 1].x, points[i - 1].y);
-      ctx.lineTo(points[i].x, points[i].y);
-      ctx.stroke();
+      drawLineWithLength(points[i - 1], points[i]);
     }
 
-    // Draw line from last point to current mouse position (if garden is not finished)
+    // Draw the line from the last point to the mouse cursor
     if (points.length > 0 && !isFinished) {
-      ctx.beginPath();
-      ctx.moveTo(points[points.length - 1].x, points[points.length - 1].y);
-      ctx.lineTo(mousePosition.x, mousePosition.y);
-      ctx.stroke();
+      drawLineWithLength(points[points.length - 1], mousePosition);
     }
 
-    // Draw final line to close the garden (if finished)
+    // Draw the final line connecting the last point to the first one if the garden is finished
     if (isFinished && points.length > 1) {
-      ctx.beginPath();
-      ctx.moveTo(points[points.length - 1].x, points[points.length - 1].y);
-      ctx.lineTo(points[0].x, points[0].y);
-      ctx.stroke();
+      drawLineWithLength(points[points.length - 1], points[0]);
     }
   };
 
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [mousePosition, setMousePosition] = useState({
+    x: 0,
+    y: 0
+  });
 
   // Mouse move event to track the current mouse position
   const handleMouseMove = (e) => {
@@ -82,7 +94,8 @@ const GardenCanvas = () => {
 
     if (startPoint && newPoint.x === startPoint.x && newPoint.y === startPoint.y) {
       setIsFinished(true);
-    } else {
+    }
+    else {
       if (!startPoint) setStartPoint(newPoint);
       setPoints([...points, newPoint]);
     }
@@ -107,12 +120,11 @@ const GardenCanvas = () => {
   }, [points, mousePosition, isFinished]);
 
   return (
-    <div>
+    <div className="content-container">
       <canvas
         ref={canvasRef}
         width={canvasSize}
         height={canvasSize}
-        style={{ border: '1px solid black' }}
         onClick={handleClick}
         onMouseMove={handleMouseMove}
       />
@@ -124,6 +136,8 @@ const GardenCanvas = () => {
       )}
     </div>
   );
+
+
 };
 
 export default GardenCanvas;

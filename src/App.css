@@ -1,8 +1,48 @@
+/* Ensure the body doesn't conflict with layout */
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column; /* Stack content vertically */
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Center the app container properly */
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
+  padding-top: 60px; /* Space for the navbar */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Horizontally center */
+  justify-content: flex-start; /* Start from the top after the navbar */
+  min-height: calc(100vh - 60px); /* Subtract navbar height */
+}
+
+/* Content container for the canvas and buttons */
+.content-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center content horizontally */
+  justify-content: center; /* Center content vertically */
   text-align: center;
+}
+
+/* Optional styling for canvas borders */
+canvas {
+  border: 2px solid bisque;
+}
+
+/* Buttons styling */
+button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
 }
 
 .logo {
