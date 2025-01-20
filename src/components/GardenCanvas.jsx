@@ -8,7 +8,7 @@ const GardenCanvas = () => {
 
   // Drawing and canvas related variables
   const canvasSize = 500;  // Adjust the canvas size if needed
-  const gridSize = 10;
+  const gridSize = 20;
 
   // Drawing functions
   const drawGrid = (ctx) => {
@@ -43,7 +43,7 @@ const GardenCanvas = () => {
       // Calculate the line length
       const length = Math.sqrt(
         Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
-      ) / 10;
+      ) / 20;
 
       // Calculate the midpoint
       const midX = (start.x + end.x) / 2;

@@ -5,6 +5,7 @@ import User from '../models/userModel.js';
 
 const loginRouter = express.Router();
 
+
 loginRouter.post('/', async (request, response) => {
   const { username, password } = request.body;
 
