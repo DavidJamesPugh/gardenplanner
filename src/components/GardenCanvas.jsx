@@ -1,18 +1,46 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from "react";
 
-const GardenCanvas = () => {
+const GardenCanvas = ({ longestLine }) => {
   const canvasRef = useRef(null);
-  const [points, setPoints] = useState([]);
-  const [isFinished, setIsFinished] = useState(false);
-  const [startPoint, setStartPoint] = useState(null);
+  const [points, setPoints] = useState([]); // Points drawn by the user
+  const [isFinished, setIsFinished] = useState(false); // Track if the garden shape is completed
+  const [mousePosition, setMousePosition] = useState(null); // Track the mouse position
 
-  // Drawing and canvas related variables
-  const canvasSize = 500;  // Adjust the canvas size if needed
-  const gridSize = 20;
+  const canvasSize = 300; // Canvas size in pixels
+  const gridSize = 125 / longestLine; // Grid size based on the longestLine in meters
+  const threshold = gridSize / 2; // Threshold for snapping to the starting point
 
-  // Drawing functions
+  const snapToGrid = (coordinate) => {
+    return Math.round(coordinate / gridSize) * gridSize;
+  };
+
+  const isNearFirstPoint = (currentPoint) => {
+    if (points.length === 0) return false;
+    const firstPoint = points[0];
+    const distance = Math.sqrt(
+      Math.pow(currentPoint.x - firstPoint.x, 2) +
+      Math.pow(currentPoint.y - firstPoint.y, 2)
+    );
+    return distance <= threshold;
+  };
+  // Draw the grid and garden when the component mounts or updates
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvasSize, canvasSize);
+
+    // Draw grid
+    drawGrid(ctx);
+
+    // Draw garden
+    drawGarden(ctx);
+  });
+
+  // Draw the grid
   const drawGrid = (ctx) => {
-    ctx.strokeStyle = '#eee';
+    ctx.strokeStyle = "#eee";
     ctx.lineWidth = 1;
     for (let x = 0; x <= canvasSize; x += gridSize) {
       ctx.beginPath();
@@ -28,116 +56,124 @@ const GardenCanvas = () => {
     }
   };
 
+  // Draw the garden with points and line lengths
   const drawGarden = (ctx) => {
     if (points.length < 1) return;
 
-    ctx.strokeStyle = 'green';
+    ctx.strokeStyle = "green";
     ctx.lineWidth = 2;
-    const drawLineWithLength = (start, end) => {
-      // Draw the line
-      ctx.beginPath();
-      ctx.moveTo(start.x, start.y);
-      ctx.lineTo(end.x, end.y);
-      ctx.stroke();
 
-      // Calculate the line length
-      const length = Math.sqrt(
-        Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
-      ) / 20;
-
-      // Calculate the midpoint
-      const midX = (start.x + end.x) / 2;
-      const midY = (start.y + end.y) / 2;
-
-      // Display the length at the midpoint
-      ctx.fillText(length.toFixed(0), midX + 5, midY - 5);
-    };
-    // Draw all garden lines except for the last one (from last to mouse)
+    // Draw all garden lines
     for (let i = 1; i < points.length; i++) {
-      drawLineWithLength(points[i - 1], points[i]);
+      drawLineWithLength(ctx, points[i - 1], points[i]);
     }
 
-    // Draw the line from the last point to the mouse cursor
-    if (points.length > 0 && !isFinished) {
-      drawLineWithLength(points[points.length - 1], mousePosition);
+    // Draw the line from the last point to the mouse cursor (if not finished)
+    if (!isFinished && points.length > 0 && mousePosition) {
+      drawLineWithLength(ctx, points[points.length - 1], mousePosition);
     }
 
-    // Draw the final line connecting the last point to the first one if the garden is finished
+    // Close the garden shape by connecting the last point to the first point
     if (isFinished && points.length > 1) {
-      drawLineWithLength(points[points.length - 1], points[0]);
+      drawLineWithLength(ctx, points[points.length - 1], points[0]);
     }
   };
 
-  const [mousePosition, setMousePosition] = useState({
-    x: 0,
-    y: 0
-  });
+  // Draw a line and display its length
+  const drawLineWithLength = (ctx, start, end) => {
+    // Draw the line
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
 
-  // Mouse move event to track the current mouse position
-  const handleMouseMove = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    setMousePosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+    // Calculate the length of the line in meters
+    const length =
+      (Math.sqrt(
+          Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
+        ) /
+        gridSize/2) *
+      2;
+
+    // Calculate the midpoint of the line
+    const midX = (start.x + end.x) / 2;
+    const midY = (start.y + end.y) / 2;
+
+    // Display the length at the midpoint
+    ctx.fillStyle = "black";
+    ctx.font = "12px Arial";
+    ctx.fillText(length.toFixed(1) + "m", midX + 5, midY - 5);
   };
 
-  // Click event to add points or finish garden
-  const handleClick = (e) => {
+  // Handle mouse movement for live preview
+  const handleMouseMove = (e) => {
+    if (!isFinished) {
+      const rect = e.target.getBoundingClientRect();
+      const snappedX = snapToGrid(e.clientX - rect.left);
+      const snappedY = snapToGrid(e.clientY - rect.top);
+      setMousePosition({
+        x: snappedX,
+        y: snappedY,
+      });
+    }
+  };
+
+  // Handle canvas click to add a new point
+  const handleCanvasClick = (e) => {
     if (isFinished) return;
 
-    const rect = canvasRef.current.getBoundingClientRect();
-    const newPoint = {
-      x: Math.round((e.clientX - rect.left) / gridSize) * gridSize,
-      y: Math.round((e.clientY - rect.top) / gridSize) * gridSize,
-    };
+    const rect = e.target.getBoundingClientRect();
+    const snappedX = snapToGrid(e.clientX - rect.left);
+    const snappedY = snapToGrid(e.clientY - rect.top);
 
-    if (startPoint && newPoint.x === startPoint.x && newPoint.y === startPoint.y) {
+    const newPoint = { x: snappedX, y: snappedY };
+
+    if (isNearFirstPoint(newPoint)) {
+      // If near the first point, finish the garden
       setIsFinished(true);
-    }
-    else {
-      if (!startPoint) setStartPoint(newPoint);
-      setPoints([...points, newPoint]);
+    } else {
+      // Otherwise, add the new point
+      setPoints((prevPoints) => [...prevPoints, newPoint]);
     }
   };
 
-  const handleReset = () => {
+  // Handle finishing the garden shape
+  const finishGarden = () => {
+    if (points.length > 2) {
+      setIsFinished(true);
+    } else {
+      alert("You need at least 3 points to complete a garden shape!");
+    }
+  };
+
+  // Handle resetting the garden shape
+  const resetGarden = () => {
     setPoints([]);
     setIsFinished(false);
-    setStartPoint(null);
+    setMousePosition(null);
   };
-
-  const handleHappy = () => {
-    console.log("Garden Measurements: ", points);
-  };
-
-  // Draw on canvas when points change
-  useEffect(() => {
-    const ctx = canvasRef.current.getContext('2d');
-    ctx.clearRect(0, 0, canvasSize, canvasSize);
-    drawGrid(ctx);
-    drawGarden(ctx);
-  }, [points, mousePosition, isFinished]);
 
   return (
-    <div className="content-container">
+    <div>
       <canvas
         ref={canvasRef}
         width={canvasSize}
         height={canvasSize}
-        onClick={handleClick}
+        style={{
+          border: "1px solid black",
+          cursor: isFinished ? "default" : "crosshair",
+        }}
         onMouseMove={handleMouseMove}
-      />
-      {isFinished && (
-        <div>
-          <button onClick={handleHappy}>Happy?</button>
-          <button onClick={handleReset}>Reset</button>
-        </div>
-      )}
+        onClick={handleCanvasClick}
+      ></canvas>
+      <div>
+            <button onClick={finishGarden}>Finish Garden</button>
+          <button onClick={resetGarden}>Reset Garden
+      </button>
+
+      </div>
     </div>
   );
-
-
 };
 
 export default GardenCanvas;
