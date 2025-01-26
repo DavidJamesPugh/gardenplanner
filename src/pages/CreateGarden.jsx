@@ -1,5 +1,9 @@
 import React, { useState } from "react";
 import GardenCanvas from "../components/GardenCanvas.jsx";
+import GardenPlanner from '../components/GardenPlanner.jsx';
+import ReactDOM from "react-dom";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 const CreateGarden = () => {
   const [gardenShape, setGardenShape] = useState(0); // Tracks the selected garden shape
@@ -131,10 +135,11 @@ const CreateGarden = () => {
             <GardenCanvas longestLine={measurements.longestLine} />
           ) : (
             <div>
-              <h2>Your Garden Shape:</h2>
               {gardenShape === 1 && (
                 <div>
-                  <p>Square with side {measurements.side} meters.</p>
+                  <DndProvider backend={HTML5Backend}>
+                    <GardenPlanner gardenData={{ shape: "square", size: measurements.side }} />
+                  </DndProvider>
                 </div>
               )}
               {gardenShape === 2 && (
