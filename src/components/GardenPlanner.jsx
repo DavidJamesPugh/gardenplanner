@@ -10,23 +10,28 @@ const vegetables = [
 const GardenPlanner = ({ gardenData }) => {
   const [gardenVegetables, setGardenVegetables] = useState( []
   );
-
+  const alertShownRef = useRef(false);
   // useEffect(() => {
   //   localStorage.setItem("gardenVegetables", JSON.stringify(gardenVegetables));
   // }, [gardenVegetables]);
 
   const handleDrop = (item, position) => {
-    console.log(item, position);
-    const isValidPosition = validatePosition(position, item.spacing/100);
-    if (isValidPosition) {
-      console.log(gardenVegetables);
-      setGardenVegetables((prev) => [...prev, { ...item, position }]);
-    } else {
-      alert("Invalid position: Too close to another vegetable or garden edge.");
-    }
+    setGardenVegetables((prevGardenVegetables) => {
+      const isValidPosition = validatePosition(position, item.spacing / 100, prevGardenVegetables);
+      if (isValidPosition) {
+        alertShownRef.current = false; // Reset the alert flag
+        return [...prevGardenVegetables, { ...item, position }];
+      } else {
+        if (!alertShownRef.current) {
+          alert("Invalid position: Too close to another vegetable or garden edge.");
+          alertShownRef.current = true;
+        }
+        return prevGardenVegetables;
+      }
+    });
   };
 
-  const validatePosition = (position, spacing) => {
+  const validatePosition = (position, spacing, gardenVegetables) => {
     const { x, y } = position;
     const canvasSize = 500; // Fixed canvas size in pixels
     const gardenWidth = gardenData.shape === "circle" ? gardenData.diameter : gardenData.width || gardenData.size;
@@ -38,7 +43,6 @@ const GardenPlanner = ({ gardenData }) => {
     for (let veg of gardenVegetables) {
       const dx = veg.position.x - x;
       const dy = veg.position.y - y;
-      console.log(dx, dy);
       if (Math.sqrt(dx * dx + dy * dy) < veg.spacing*scaleX/2/100 + spacing*scaleX/2) return false;
     }
 
@@ -132,17 +136,19 @@ const GardenDropArea = ({ gardenData, gardenVegetables, onDrop }) => {
   const [, drop] = useDrop(() => ({
     accept: "VEGETABLE",
     drop: (item, monitor) => {
-      const cursorOffset = monitor.getClientOffset(); // Get the cursor's position in the viewport
-      if (!cursorOffset) return;
-      const canvasRect = dropRef.current.getBoundingClientRect();
+      if (!monitor.didDrop()) {
+        const cursorOffset = monitor.getClientOffset(); // Get the cursor's position in the viewport
+        if (!cursorOffset) return;
+        const canvasRect = dropRef.current.getBoundingClientRect();
 
-      // Scale offset position to garden coordinates
-      const position = {
-        x: Math.round((cursorOffset.x - canvasRect.left)), // Adjust for scaling
-        y: Math.round((cursorOffset.y - canvasRect.top)),  // Adjust for scaling
-      };
+        // Scale offset position to garden coordinates
+        const position = {
+          x: Math.round((cursorOffset.x - canvasRect.left)), // Adjust for scaling
+          y: Math.round((cursorOffset.y - canvasRect.top)),  // Adjust for scaling
+        };
 
-      onDrop(item, position);
+        onDrop(item, position);
+      }
     },
   }));
   const assignRef = useCallback(
