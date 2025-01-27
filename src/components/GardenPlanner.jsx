@@ -11,14 +11,15 @@ const GardenPlanner = ({ gardenData }) => {
   const [gardenVegetables, setGardenVegetables] = useState( []
   );
 
-  useEffect(() => {
-    localStorage.setItem("gardenVegetables", JSON.stringify(gardenVegetables));
-  }, [gardenVegetables]);
+  // useEffect(() => {
+  //   localStorage.setItem("gardenVegetables", JSON.stringify(gardenVegetables));
+  // }, [gardenVegetables]);
 
   const handleDrop = (item, position) => {
     console.log(item, position);
     const isValidPosition = validatePosition(position, item.spacing/100);
     if (isValidPosition) {
+      console.log(gardenVegetables);
       setGardenVegetables((prev) => [...prev, { ...item, position }]);
     } else {
       alert("Invalid position: Too close to another vegetable or garden edge.");
@@ -33,24 +34,20 @@ const GardenPlanner = ({ gardenData }) => {
     const scaleX = canvasSize / gardenWidth;
     const scaleY = canvasSize / gardenHeight;
 
-    console.log(scaleX,scaleY);
-    console.log(position,spacing);
-
-    console.log(gardenVegetables);
     // Check proximity to other vegetables
     for (let veg of gardenVegetables) {
       const dx = veg.position.x - x;
       const dy = veg.position.y - y;
       console.log(dx, dy);
-      if (Math.sqrt(dx * dx + dy * dy) < veg.spacing/100 + spacing/100) return false;
+      if (Math.sqrt(dx * dx + dy * dy) < veg.spacing*scaleX/2/100 + spacing*scaleX/2) return false;
     }
 
     // Check garden boundaries
     return (
-      x >= spacing && // Left boundary
-      y >= spacing //&& // Top boundary
-     // x <= scaleX - spacing && // Right boundary
-     // y <= scaleY - spacing // Bottom boundary
+      x >= spacing*scaleX/2 && // Left boundary
+      y >= spacing*scaleY/2 && // Top boundary
+      x <= canvasSize - (spacing*scaleX/2) && // Right boundary
+      y <= canvasSize - (spacing*scaleY/2) // Bottom boundary
     );
   };
 
@@ -94,8 +91,8 @@ const DroppedVege = ({scaleX,scaleY,gardenVegetables}) => {
           key={index}
           style={{
             position: "absolute",
-            left: veg.position.x, // Convert back to canvas pixels
-            top: veg.position.y, // Convert back to canvas pixels
+            left: veg.position.x - (scaleX/2)*(veg.spacing/100), // Convert back to canvas pixels
+            top: veg.position.y - (scaleY/2)*(veg.spacing/100), // Convert back to canvas pixels
             width: `${scaleX*(veg.spacing/100)}px`, // Scale vegetable size
             height: `${scaleY*(veg.spacing/100)}px`, // Scale vegetable size
             backgroundColor: "green",
@@ -109,8 +106,8 @@ const DroppedVege = ({scaleX,scaleY,gardenVegetables}) => {
           key={index}
           style={{
             position: "absolute",
-            left: veg.position.x, // Convert back to canvas pixels
-            top: veg.position.y, // Convert back to canvas pixels
+            left: veg.position.x - scaleX/2/100, // Convert back to canvas pixels
+            top: veg.position.y - scaleY/2/100, // Convert back to canvas pixels
             width: `${scaleX/100}px`, // Scale vegetable size
             height: `${scaleY/100}px`, // Scale vegetable size
             backgroundColor: "green",
@@ -135,15 +132,14 @@ const GardenDropArea = ({ gardenData, gardenVegetables, onDrop }) => {
   const [, drop] = useDrop(() => ({
     accept: "VEGETABLE",
     drop: (item, monitor) => {
-      const offset = monitor.getSourceClientOffset();
-      if (!offset) return;
+      const cursorOffset = monitor.getClientOffset(); // Get the cursor's position in the viewport
+      if (!cursorOffset) return;
       const canvasRect = dropRef.current.getBoundingClientRect();
 
-    console.log(`Offset x and y ${offset.x} - ${offset.y}`);
       // Scale offset position to garden coordinates
       const position = {
-        x: Math.round(offset.x - canvasRect.left),
-        y: Math.round(offset.y - canvasRect.top),
+        x: Math.round((cursorOffset.x - canvasRect.left)), // Adjust for scaling
+        y: Math.round((cursorOffset.y - canvasRect.top)),  // Adjust for scaling
       };
 
       onDrop(item, position);
