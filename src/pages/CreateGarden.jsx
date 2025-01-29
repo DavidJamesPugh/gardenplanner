@@ -50,13 +50,17 @@ const CreateGarden = () => {
   return (
     <div>
       <h1>Create Your Garden</h1>
-      <p>Is your garden...</p>
-      <button onClick={() => handleSetGardenShape(1)}>Square?</button>
-      <button onClick={() => handleSetGardenShape(2)}>Rectangular?</button>
-      <button onClick={() => handleSetGardenShape(3)}>A Circle?</button>
-      <button onClick={() => handleSetGardenShape(4)}>Irregularly shaped?</button>
+      {gardenShape === 0 && (
+        <>
+          <p>Is your garden...</p>
+          <button onClick={() => handleSetGardenShape(1)}>Square?</button>
+          <button onClick={() => handleSetGardenShape(2)}>Rectangular?</button>
+          <button onClick={() => handleSetGardenShape(3)}>A Circle?</button>
+          <button onClick={() => handleSetGardenShape(4)}>Irregularly shaped?</button>
+        </>
+      )}
 
-      {gardenShape === 1 && (
+      {gardenShape === 1 && measurements === null && (
         <div>
           <h2>Square Garden</h2>
           <label>
@@ -72,7 +76,7 @@ const CreateGarden = () => {
         </div>
       )}
 
-      {gardenShape === 2 && (
+      {gardenShape === 2 && measurements === null && (
         <div>
           <h2>Rectangular Garden</h2>
           <label>
@@ -97,7 +101,7 @@ const CreateGarden = () => {
         </div>
       )}
 
-      {gardenShape === 3 && (
+      {gardenShape === 3 && measurements === null && (
         <div>
           <h2>Circular Garden</h2>
           <label>
@@ -113,7 +117,7 @@ const CreateGarden = () => {
         </div>
       )}
 
-      {gardenShape === 4 && (
+      {gardenShape === 4 && measurements === null && (
         <div>
           <h2>Irregular Garden</h2>
           <label>
@@ -131,36 +135,45 @@ const CreateGarden = () => {
 
       {isReady && measurements && (
         <div>
-          {gardenShape === 4 ? (
-            <GardenCanvas longestLine={measurements.longestLine} />
-          ) : (
-            <div>
-              {gardenShape === 1 && (
-                <div>
-                  <DndProvider backend={HTML5Backend}>
-                    <GardenPlanner gardenData={{ shape: "square", size: measurements.side }} />
-                  </DndProvider>
-                </div>
-              )}
-              {gardenShape === 2 && (
-                <div>
-                  <p>
-                    Rectangle with width {measurements.width} meters and length{" "}
-                    {measurements.length} meters.
-                  </p>
-                </div>
-              )}
-              {gardenShape === 3 && (
-                <div>
-                  <p>Circle with diameter {measurements.diameter} meters.</p>
-                </div>
-              )}
-            </div>
-          )}
+          {gardenShape === 4 ?
+            (
+              <GardenCanvas longestLine={measurements.longestLine}/>
+            ) :
+            (
+              <div>
+                {gardenShape === 1 && (
+                  <div>
+                    <DndProvider backend={HTML5Backend}>
+                      <GardenPlanner gardenData={{
+                        shape: "square",
+                        size: measurements.side
+                      }}/>
+                    </DndProvider>
+                  </div>
+                )}
+                {gardenShape === 2 && (
+                  <div>
+                    <p>
+                      Rectangle with width {measurements.width} meters and length{" "}
+                      {measurements.length} meters.
+                    </p>
+                  </div>
+                )}
+                {gardenShape === 3 && (
+                  <div>
+                    <p>Circle with diameter {measurements.diameter} meters.</p>
+                  </div>
+                )}
+              </div>
+            )}
         </div>
       )}
-    </div>
-  );
+      {gardenShape > 0 &&
+        (
+      <button onClick={() => handleSetGardenShape(0)}>Redo Garden</button>
+        )}
+      </div>
+  )
 };
 
 export default CreateGarden;

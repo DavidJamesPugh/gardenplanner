@@ -70,7 +70,10 @@ const GardenPlanner = ({ gardenData }) => {
   return (
     <div onMouseMove={handleMouseMove}>
       <h2>Plan Your Garden</h2>
-      <div style={{ display: "flex", gap: "1rem" }}>
+      <div style={{
+        display: 'flex',
+        gap: '1rem',
+      }}>
         {vegetables.map((veg) => (
           <Vegetable
             key={veg.id}
@@ -87,11 +90,16 @@ const GardenPlanner = ({ gardenData }) => {
         selectedVegetable={selectedVegetable}
         canvasRef={canvasRef} // Pass the ref
       />
+
+      <button onClick={() => setGardenVegetables([])}>Reset Canvas</button>
     </div>
   );
 };
 
-const Vegetable = ({ vegetable, onClick }) => {
+const Vegetable = ({
+  vegetable,
+  onClick,
+}) => {
   return (
     <div
       onClick={onClick}
@@ -197,6 +205,7 @@ const GardenDropArea = ({
 }) => {
 
   return (
+
     <div
       ref={canvasRef} // Attach the ref
       onClick={onCanvasClick}
@@ -207,15 +216,19 @@ const GardenDropArea = ({
         background: "#f0f0f0",
         border: "1px solid #ccc",
         marginTop: "1rem",
-        cursor: selectedVegetable ? "crosshair" : "default",
+        cursor: selectedVegetable ?
+          "crosshair" :
+          "default",
       }}
     >
       <DroppedVege gardenData={gardenData} gardenVegetables={gardenVegetables}/>
 
       {/* Render hovering vegetable */}
       {selectedVegetable &&
-        <SelectedVegetablePlacement selectedVegetable={selectedVegetable} gardenData={gardenData} cursorPosition={cursorPosition}/>
+        <SelectedVegetablePlacement selectedVegetable={selectedVegetable} gardenData={gardenData}
+                                    cursorPosition={cursorPosition}/>
       }
+
     </div>
   );
 };
