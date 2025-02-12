@@ -6,20 +6,30 @@ const vegetables = [
   { id: 3, name: "Leek", spacing: 15, fullSun: true },
 ];
 
-const canvasSize = 500; // Fixed canvas size in pixels
+const canvasSize = 800; // Fixed canvas size in pixels
 
 const GardenPlanner = ({ gardenData }) => {
-  const [gardenVegetables, setGardenVegetables] = useState([]);
   const [selectedVegetable, setSelectedVegetable] = useState(null); // Tracks the selected vegetable
+  const [gardenVegetables, setGardenVegetables] = useState([]);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 }); // Tracks cursor position
   const canvasRef = useRef(null);
+
+
+  gardenData.width = gardenData.shape === "square" ? gardenData.size : gardenData.width;
+  gardenData.height = gardenData.shape === "square" ? gardenData.size : gardenData.length;
+  const gardenCanvasDivisor = gardenData.width/gardenData.height;
+
+  gardenData.canvasSizeX = canvasSize; // Fixed canvas width in pixels
+  gardenData.canvasSizeY = canvasSize/gardenCanvasDivisor; // Fixed canvas height in pixels
+  gardenData.canvasScale = gardenData.canvasSizeX / gardenData.width;
+
 
   const handleCanvasClick = (e) => {
     if (selectedVegetable) {
       const canvasRect = e.target.getBoundingClientRect(); // Get canvas bounds
       const position = {
-        x: e.clientX - canvasRect.left, // Adjust for canvas offset
-        y: e.clientY - canvasRect.top,
+        x: e.clientX-10 - canvasRect.left, // Adjust for canvas offset
+        y: e.clientY-10 - canvasRect.top,
       };
 
       // Validate the position and add the vegetable
@@ -37,33 +47,31 @@ const GardenPlanner = ({ gardenData }) => {
     if (selectedVegetable && canvasRef.current) {
       const canvasRect = canvasRef.current.getBoundingClientRect(); // Get canvas bounds
       setCursorPosition({
-        x: e.clientX - canvasRect.left,
-        y: e.clientY - canvasRect.top,
+        x: e.clientX-10 - canvasRect.left,
+        y: e.clientY-10 - canvasRect.top,
       });
+
     }
   };
 
   const validatePosition = (position, spacing) => {
     // Validation logic for vegetable placement
     const { x, y } = position;
-    const gardenWidth = gardenData.shape === "circle" ? gardenData.diameter : gardenData.width || gardenData.size;
-    const gardenHeight = gardenData.shape === "circle" ? gardenData.diameter : gardenData.length || gardenData.size;
-    const scaleX = canvasSize / gardenWidth;
-    const scaleY = canvasSize / gardenHeight;
+    const canvasScale = gardenData.canvasScale;
 
     // Check proximity to other vegetables
     for (let veg of gardenVegetables) {
       const dx = veg.position.x - x;
       const dy = veg.position.y - y;
-      if (Math.sqrt(dx * dx + dy * dy) < veg.spacing * scaleX / 2 / 100 + spacing * scaleX / 2) return false;
+      if (Math.sqrt(dx * dx + dy * dy) < veg.spacing * canvasScale / 2 / 100 + spacing * canvasScale / 2) return false;
     }
 
     // Check garden boundaries
     return (
-      x >= spacing * scaleX / 2 &&
-      y >= spacing * scaleY / 2 &&
-      x <= canvasSize - spacing * scaleX / 2 &&
-      y <= canvasSize - spacing * scaleY / 2
+      x >= spacing * canvasScale / 2 &&
+      y >= spacing * canvasScale / 2 &&
+      x <= gardenData.canvasSizeX - spacing * canvasScale / 2 &&
+      y <= gardenData.canvasSizeY - spacing * canvasScale / 2
     );
   };
 
@@ -86,15 +94,16 @@ const GardenPlanner = ({ gardenData }) => {
         gardenData={gardenData}
         gardenVegetables={gardenVegetables}
         onCanvasClick={handleCanvasClick}
-        cursorPosition={cursorPosition}
-        selectedVegetable={selectedVegetable}
         canvasRef={canvasRef} // Pass the ref
+        selectedVegetable={selectedVegetable}
+      cursorPosition={cursorPosition}
+      validatePosition={validatePosition}
       />
-
       <button onClick={() => setGardenVegetables([])}>Reset Canvas</button>
     </div>
   );
 };
+
 
 const Vegetable = ({
   vegetable,
@@ -110,25 +119,24 @@ const Vegetable = ({
   );
 };
 
-const SelectedVegetablePlacement = ({ selectedVegetable, gardenData, cursorPosition }) => {
-  ///if (!cursorPosition || !selectedVegetable) return null;
-  const veg = selectedVegetable
-  console.log(cursorPosition)
-  const gardenWidth = gardenData.shape === "circle" ? gardenData.diameter : gardenData.width || gardenData.size;
-  const gardenHeight = gardenData.shape === "circle" ? gardenData.diameter : gardenData.length || gardenData.size;
-  const scaleX = canvasSize / gardenWidth;
-  const scaleY = canvasSize / gardenHeight;
+const SelectedVegetablePlacement = ({ selectedVegetable, gardenData, cursorPosition, validatePosition}) => {
+  if (!cursorPosition || !selectedVegetable) return null;
+  const veg = selectedVegetable;
+
+  const canvasScale = gardenData.canvasScale;
+
+  const isValidPosition = validatePosition(cursorPosition, selectedVegetable.spacing / 100);
 
   return (
     <>
       <div
         style={{
           position: 'absolute',
-          left: cursorPosition.x - (veg.spacing*scaleX/2/100), // Ensure cursorPosition.x is defined
-          top: cursorPosition.y - (veg.spacing*scaleY/2/100), // Ensure cursorPosition.y is defined
-          width: `${scaleX * (veg.spacing / 100)}px`, // Scale vegetable size
-          height: `${scaleY * (veg.spacing / 100)}px`, // Scale vegetable size
-          backgroundColor: 'green',
+          left: cursorPosition.x - (veg.spacing*canvasScale/2/100), // Ensure cursorPosition.x is defined
+          top: cursorPosition.y - (veg.spacing*canvasScale/2/100), // Ensure cursorPosition.y is defined
+          width: `${canvasScale * (veg.spacing / 100)}px`, // Scale vegetable size
+          height: `${canvasScale * (veg.spacing / 100)}px`, // Scale vegetable size
+          backgroundColor: isValidPosition ? 'green' : 'red',
           borderRadius: '50%',
           opacity: '20%',
           pointerEvents: 'none', // Let clicks pass through
@@ -137,11 +145,11 @@ const SelectedVegetablePlacement = ({ selectedVegetable, gardenData, cursorPosit
       <div
         style={{
           position: 'absolute',
-          left: cursorPosition.x - scaleX/2/100, // Ensure cursorPosition.x is defined
-          top: cursorPosition.y - scaleY/2/100, // Ensure cursorPosition.y is defined
-          width: `${scaleX / 100}px`, // Scale vegetable size
-          height: `${scaleY / 100}px`, // Scale vegetable size
-          backgroundColor: 'green',
+          left: cursorPosition.x - canvasScale/2/100, // Ensure cursorPosition.x is defined
+          top: cursorPosition.y - canvasScale/2/100, // Ensure cursorPosition.y is defined
+          width: `${canvasScale / 100}px`, // Scale vegetable size
+          height: `${canvasScale / 100}px`, // Scale vegetable size
+          backgroundColor:  isValidPosition ? 'green' : 'red',
           borderRadius: '50%',
           pointerEvents: 'none', // Let clicks pass through
         }}>
@@ -155,10 +163,7 @@ const DroppedVege = ({
   gardenVegetables,
 }) => {
 
-  const gardenWidth = gardenData.shape === "circle" ? gardenData.diameter : gardenData.width || gardenData.size;
-  const gardenHeight = gardenData.shape === "circle" ? gardenData.diameter : gardenData.length || gardenData.size;
-  const scaleX = canvasSize / gardenWidth;
-  const scaleY = canvasSize / gardenHeight;
+  const canvasScale = gardenData.canvasScale;
 
   return (
     <>
@@ -167,10 +172,10 @@ const DroppedVege = ({
           key={index}
           style={{
             position: 'absolute',
-            left: veg.position.x - (scaleX / 2) * (veg.spacing / 100), // Convert back to canvas pixels
-            top: veg.position.y - (scaleY / 2) * (veg.spacing / 100), // Convert back to canvas pixels
-            width: `${scaleX * (veg.spacing / 100)}px`, // Scale vegetable size
-            height: `${scaleY * (veg.spacing / 100)}px`, // Scale vegetable size
+            left: veg.position.x - (canvasScale / 2) * (veg.spacing / 100), // Convert back to canvas pixels
+            top: veg.position.y - (canvasScale / 2) * (veg.spacing / 100), // Convert back to canvas pixels
+            width: `${canvasScale * (veg.spacing / 100)}px`, // Scale vegetable size
+            height: `${canvasScale * (veg.spacing / 100)}px`, // Scale vegetable size
             backgroundColor: "green",
             borderRadius: "50%",
             opacity: "20%",
@@ -182,10 +187,10 @@ const DroppedVege = ({
           key={index}
           style={{
             position: "absolute",
-            left: veg.position.x - scaleX/2/100, // Convert back to canvas pixels
-            top: veg.position.y - scaleY/2/100, // Convert back to canvas pixels
-            width: `${scaleX/100}px`, // Scale vegetable size
-            height: `${scaleY/100}px`, // Scale vegetable size
+            left: veg.position.x - canvasScale/2/100, // Convert back to canvas pixels
+            top: veg.position.y - canvasScale/2/100, // Convert back to canvas pixels
+            width: `${canvasScale/100}px`, // Scale vegetable size
+            height: `${canvasScale/100}px`, // Scale vegetable size
             backgroundColor: "green",
             borderRadius: "50%",
           }}
@@ -199,9 +204,10 @@ const GardenDropArea = ({
   gardenData,
   gardenVegetables,
   onCanvasClick,
-  cursorPosition,
+  canvasRef,
   selectedVegetable,
-  canvasRef
+  cursorPosition,
+  validatePosition
 }) => {
 
   return (
@@ -212,23 +218,21 @@ const GardenDropArea = ({
       style={{
         position: "relative",
         width: `${canvasSize}px`,
-        height: `${canvasSize}px`,
+        aspectRatio: `${gardenData.width/gardenData.height}`,
         background: "#f0f0f0",
         border: "1px solid #ccc",
         marginTop: "1rem",
-        cursor: selectedVegetable ?
-          "crosshair" :
-          "default",
+        cursor:selectedVegetable ?  "crosshair" : "default" ,
       }}
     >
       <DroppedVege gardenData={gardenData} gardenVegetables={gardenVegetables}/>
 
+
       {/* Render hovering vegetable */}
       {selectedVegetable &&
         <SelectedVegetablePlacement selectedVegetable={selectedVegetable} gardenData={gardenData}
-                                    cursorPosition={cursorPosition}/>
+                                    cursorPosition={cursorPosition} validatePosition={validatePosition} />
       }
-
     </div>
   );
 };

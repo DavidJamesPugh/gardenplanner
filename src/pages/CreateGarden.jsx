@@ -153,10 +153,13 @@ const CreateGarden = () => {
                 )}
                 {gardenShape === 2 && (
                   <div>
-                    <p>
-                      Rectangle with width {measurements.width} meters and length{" "}
-                      {measurements.length} meters.
-                    </p>
+                    <DndProvider backend={HTML5Backend}>
+                      <GardenPlanner gardenData={{
+                        shape: "rectangle",
+                        width: measurements.width,
+                        length: measurements.length
+                        }}/>
+                    </DndProvider>
                   </div>
                 )}
                 {gardenShape === 3 && (
