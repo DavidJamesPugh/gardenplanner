@@ -1,0 +1,17 @@
+### GET request to example server
+GET https://examples.http-client.intellij.net/get
+    ?generated-in=WebStorm
+
+###
+
+POST http://localhost:3000/api/vegetables
+Content-Type: application/json
+
+{
+  "name": "Leek", "firstPlantingDate": 3, "lastPlantingDate" :  7,
+  "fruitsInDays":  130, "stopsFruitingInDays": 180, "sunHoursRequired": 7,
+  "spacingCM": 45, "gardenId": null
+}
+
+
+###

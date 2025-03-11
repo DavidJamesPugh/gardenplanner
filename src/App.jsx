@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from "axios";
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import CreateGarden from './pages/CreateGarden';
@@ -10,10 +11,22 @@ import './App.css';
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Simulate login status
+  const [users, setUsers] = useState([]);
 
+  // useEffect(() => {
+  //   axios.get("http://localhost:5000/users")
+  //     .then((response) => setUsers(response.data))
+  //     .catch((error) => console.error(error));
+  // }, []);
   return (
     <>
       <Router>
+        <h1>Users</h1>
+        <ul>
+          {/* {users.map(user => ( */}
+          {/*   <li key={user.id}>{user.name} - {user.email}</li> */}
+          {/* ))} */}
+        </ul>
         <Navbar isLoggedIn={isLoggedIn}/>
         <div className="content-container">
           <Routes>
@@ -25,7 +38,7 @@ const App = () => {
         </div>
       </Router>
     </>
-);
+  );
 };
 
 export default App;
